@@ -13,7 +13,7 @@ from pydantic import BaseModel
 from typing import Optional
 
 
-class WeatherCurrent(Base):
+class Weather(Base):
     """
     SQLAlchemy ORM model representing a current weather record.
 
@@ -48,7 +48,7 @@ class WeatherCurrent(Base):
         )
 
 
-class WeatherCurrentCreate(BaseModel):
+class WeatherCreate(BaseModel):
     """
     Pydantic schema for creating a new Weather record.
 
