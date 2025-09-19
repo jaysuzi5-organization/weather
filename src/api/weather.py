@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, Body
+from sqlalchemy import desc
 from sqlalchemy.orm import Session
 from framework.db import get_db
 from models.weather import Weather, WeatherCreate
@@ -26,7 +27,7 @@ def list_weather(
     db: Session = Depends(get_db)
 ):
     """
-    Retrieve a paginated list of Weather records.
+    Retrieve a paginated list of Weather records, sorted by latest collection_time first.
 
     Args:
         page (int): Page number starting from 1.
@@ -38,7 +39,13 @@ def list_weather(
     """
     try:
         offset = (page - 1) * limit
-        weather_records = db.query(Weather).offset(offset).limit(limit).all()
+        weather_records = (
+            db.query(Weather)
+            .order_by(desc(Weather.collection_time))  # sort descending
+            .offset(offset)
+            .limit(limit)
+            .all()
+        )
         return [serialize_sqlalchemy_obj(item) for item in weather_records]
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
