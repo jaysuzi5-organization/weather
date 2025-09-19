@@ -1,31 +1,55 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>weather Test Page</title>
+  <title>Weather Test Page</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <h1>weather Management</h1>
+  <h1>Weather Management</h1>
 
-  <h2>Add weather</h2>
+  <h2>Add Weather</h2>
   <form id="weatherForm" autocomplete="off">
     <label>
-      User Name:
-      <input type="text" id="username" required>
+      Collection Time (UTC):
+      <input type="datetime-local" id="collection_time" required>
     </label>
     <label>
-      Full Name:
-      <input type="text" id="full_name" required>
+      Temperature:
+      <input type="number" id="temperature">
     </label>
     <label>
-      Email:
-      <input type="email" id="email" required>
+      Temperature Min:
+      <input type="number" id="temperature_min">
+    </label>
+    <label>
+      Temperature Max:
+      <input type="number" id="temperature_max">
+    </label>
+    <label>
+      Humidity:
+      <input type="number" id="humidity">
+    </label>
+    <label>
+      Description:
+      <input type="text" id="description" maxlength="200">
+    </label>
+    <label>
+      Feels Like:
+      <input type="number" id="feels_like">
+    </label>
+    <label>
+      Wind Speed:
+      <input type="number" step="0.1" id="wind_speed">
+    </label>
+    <label>
+      Wind Direction:
+      <input type="number" id="wind_direction">
     </label>
     <button type="submit">Add</button>
   </form>
   <div id="responseMessage"></div>
 
-  <h2>weather List</h2>
+  <h2>Weather List</h2>
 
   <div id="paginationControls" aria-label="Pagination controls">
     <button id="prevPage" disabled>Previous</button>
@@ -44,7 +68,17 @@
 
   <table id="weatherTable" aria-label="weather list table">
     <thead>
-      <tr><th>ID</th><th>weather Name</th><th>Email</th><th>Full Name</th><th>Create Date</th><th>Update Date</th></tr>
+      <tr>
+        <th>Collection Time</th>
+        <th>Temp</th>
+        <th>Min</th>
+        <th>Max</th>
+        <th>Humidity</th>
+        <th>Description</th>
+        <th>Feels Like</th>
+        <th>Wind Speed</th>
+        <th>Wind Dir</th>
+      </tr>
     </thead>
     <tbody></tbody>
   </table>
@@ -60,7 +94,6 @@
 
     let currentPage = 1;
 
-    // Always read pageSize dynamically before load_weather
     function getPageSize() {
       return Number(pageSizeSelect.value);
     }
@@ -81,7 +114,6 @@
         tbody.innerHTML = '';
 
         if (data.length === 0 && page > 1) {
-          // No data on requested page - go back one page and reload
           currentPage = page - 1;
           updatePaginationButtons();
           load_weather(currentPage);
@@ -91,12 +123,15 @@
         data.forEach(weather => {
           tbody.innerHTML += `
             <tr>
-              <td>${weather.id}</td>
-              <td>${weather.username}</td>
-              <td>${weather.email}</td>
-              <td>${weather.full_name ?? ''}</td>
-              <td>${weather.create_date ? new Date(weather.create_date).toLocaleString() : ''}</td>
-              <td>${weather.update_date ? new Date(weather.update_date).toLocaleString() : ''}</td>
+              <td>${weather.collection_time ? new Date(weather.collection_time).toLocaleString() : ''}</td>
+              <td>${weather.temperature ?? ''}</td>
+              <td>${weather.temperature_min ?? ''}</td>
+              <td>${weather.temperature_max ?? ''}</td>
+              <td>${weather.humidity ?? ''}</td>
+              <td>${weather.description ?? ''}</td>
+              <td>${weather.feels_like ?? ''}</td>
+              <td>${weather.wind_speed ?? ''}</td>
+              <td>${weather.wind_direction ?? ''}</td>
             </tr>
           `;
         });
@@ -113,23 +148,20 @@
 
     function updatePaginationButtons() {
       prevPageBtn.disabled = currentPage <= 1;
-      // Next button is always enabled as before
     }
 
-    // Prev button handler
     prevPageBtn.addEventListener('click', () => {
       if (currentPage > 1) {
         load_weather(currentPage - 1);
       }
     });
 
-    // Next button handler
     nextPageBtn.addEventListener('click', () => {
       load_weather(currentPage + 1);
     });
 
     pageSizeSelect.addEventListener('change', () => {
-      currentPage = 1;  // reset to first page on page size change
+      currentPage = 1;
       load_weather(currentPage);
     });
 
@@ -138,14 +170,32 @@
       responseMessage.textContent = '';
       responseMessage.className = '';
 
-      const username = document.getElementById('username').value.trim();
-      const full_name = document.getElementById('full_name').value.trim();
-      const email = document.getElementById('email').value.trim();
+      const collection_time = document.getElementById('collection_time').value;
+      const temperature = document.getElementById('temperature').value;
+      const temperature_min = document.getElementById('temperature_min').value;
+      const temperature_max = document.getElementById('temperature_max').value;
+      const humidity = document.getElementById('humidity').value;
+      const description = document.getElementById('description').value;
+      const feels_like = document.getElementById('feels_like').value;
+      const wind_speed = document.getElementById('wind_speed').value;
+      const wind_direction = document.getElementById('wind_direction').value;
+
+      const payload = {
+        collection_time: new Date(collection_time).toISOString(),
+        temperature: temperature ? Number(temperature) : null,
+        temperature_min: temperature_min ? Number(temperature_min) : null,
+        temperature_max: temperature_max ? Number(temperature_max) : null,
+        humidity: humidity ? Number(humidity) : null,
+        description: description || null,
+        feels_like: feels_like ? Number(feels_like) : null,
+        wind_speed: wind_speed ? parseFloat(wind_speed) : null,
+        wind_direction: wind_direction ? Number(wind_direction) : null
+      };
 
       fetch(apiBase, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, full_name, email })
+        body: JSON.stringify(payload)
       })
       .then(async res => {
         const contentType = res.headers.get('content-type') || '';
